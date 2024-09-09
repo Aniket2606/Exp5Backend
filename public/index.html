@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Salary Management</title>
+  <style>
+    body {
+      font-family: 'Trebuchet MS', sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    #title{
+        margin-top: 0;
+        padding: 10px;
+        background-color: #28a745;
+        color: white;
+    }
+    .container {
+      width: 90%;
+      margin: 0 auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+    }
+    h1, h3 {
+      text-align: center;
+      color: #333;
+    }
+    .form-container {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+    form {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      width: 30%;
+      box-sizing: border-box;
+    }
+    form label {
+      display: block;
+      margin: 5px 0 2px;
+    }
+    form input, select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 12px;
+      padding: 10px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .refresh-button {
+      position: absolute;
+      top: 540px;
+      right: 80px;
+      width: 22%;
+      padding: 10px 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      float: right;
+    }
+    .refresh-button:hover {
+      background-color: #218838;
+    }
+    table {
+      margin-top: 40px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .employees-header {
+      border-top: 2px solid #333;
+      padding-top: 5px;
+    }
+  </style>
+</head>
+<body>
+ 
+<h1 id="title">Employee Salary Management</h1>
+  <div class="container">
+    <div class="form-container">
+      <form id="addEmployeeForm">
+        <h3>Add Employee</h3>
+        <label for="id">ID:</label>
+        <input type="text" id="id" name="id" required>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="position">Position:</label>
+        <input type="text" id="position" name="position" required>
+        <label for="salary">Salary:</label>
+        <input type="number" id="salary" name="salary" required>
+        <button type="submit">Add Employee</button>
+      </form>
+
+      <form id="updateEmployeeForm">
+        <h3>Update Employee</h3>
+        <label for="updateSelectId">Select ID:</label>
+        <select id="updateSelectId" name="updateSelectId" required>
+          <!-- Options will be populated by JavaScript -->
+        </select>
+        <label for="updateSalary">New Salary:</label>
+        <input type="number" id="updateSalary" name="updateSalary">
+        <button type="submit">Update Employee</button>
+      </form>
+      
+
+      <form id="deleteEmployeeForm">
+        <h3>Delete Employee</h3>
+        <label for="deleteId">ID:</label>
+        <input type="text" id="deleteId" name="deleteId" required>
+        <button type="submit">Delete Employee</button>
+      </form>
+    </div>
+
+    <div class="employees-header">
+      <h2>Employees Data</h2>
+      <button class="refresh-button" onclick="fetchEmployees()"><b>Display Data</b></button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Position</th>
+          <th>Salary</th>
+        </tr>
+      </thead>
+      <tbody id="employeeTableBody">
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Add Employee
+    document.getElementById('addEmployeeForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      const data = {};
+      formData.forEach((value, key) => (data[key] = value));
+  
+      try {
+        const response = await fetch('/employees', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+  
+        if (response.ok) {
+          alert('Employee added successfully!');
+          event.target.reset();
+          fetchEmployees();
+        } else {
+          alert('Error adding employee: ' + response.statusText);
+        }
+      } catch (error) {
+        alert('Network error: ' + error.message);
+      }
+    });
+  
+    // Update Employee
+    document.getElementById('updateEmployeeForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      const id = formData.get('updateSelectId'); // Extract the ID from the dropdown
+      const newSalary = formData.get('updateSalary');
+  
+      if (!id) {
+        alert('ID is required for updating.');
+        return;
+      }
+  
+      try {
+        const response = await fetch(`/employees/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ salary: newSalary }),
+        });
+  
+        if (response.ok) {
+          alert('Employee updated successfully!');
+          event.target.reset();
+          fetchEmployees();
+        } else {
+          alert('Error updating employee: ' + response.statusText);
+        }
+      } catch (error) {
+        alert('Network error: ' + error.message);
+      }
+    });
+  
+    // Delete Employee
+    document.getElementById('deleteEmployeeForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formData = new FormData(event.target);
+  const id = formData.get('deleteId');
+
+  if (!id) {
+    alert('Please enter an Employee ID to delete.');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/employees/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      alert('Employee deleted successfully!');
+      event.target.reset();
+      fetchEmployees();
+    } else if (response.status === 404) {
+      alert('Error: Employee ID not found.');
+    } else {
+      alert('Error deleting employee: ' + response.statusText);
+    }
+  } catch (error) {
+    alert('Network error: ' + error.message);
+  }
+});
+
+  
+    // Fetch and display employees
+    async function fetchEmployees() {
+      try {
+        const response = await fetch('/employees');
+        const employees = await response.json();
+        const employeeTableBody = document.getElementById('employeeTableBody');
+        const updateSelectId = document.getElementById('updateSelectId');
+        employeeTableBody.innerHTML = '';
+        updateSelectId.innerHTML = ''; // Clear existing options
+  
+        employees.forEach(emp => {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${emp.id}</td><td>${emp.name}</td><td>${emp.position}</td><td>Rs. ${emp.salary}</td>`;
+          employeeTableBody.appendChild(row);
+  
+          // Populate dropdown list with employee IDs
+          const option = document.createElement('option');
+          option.value = emp.id;
+          option.textContent = emp.id;
+          updateSelectId.appendChild(option);
+        });
+      } catch (error) {
+        alert('Error fetching employees: ' + error.message);
+      }
+    }
+  
+    // Initial fetch of employees
+    fetchEmployees();
+  </script>
+  
+  
+</body>
+</html>
